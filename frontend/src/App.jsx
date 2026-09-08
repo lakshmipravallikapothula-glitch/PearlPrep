@@ -8,7 +8,6 @@ import "./App.css";
 function OceanDecorations() {
   return (
     <>
-      {/* Bubbles */}
       <div className="bubble bubble-1"></div>
       <div className="bubble bubble-2"></div>
       <div className="bubble bubble-3"></div>
@@ -17,7 +16,6 @@ function OceanDecorations() {
       <div className="bubble bubble-6"></div>
       <div className="bubble bubble-7"></div>
 
-      {/* Swimming fish */}
       <div className="fish fish-1">🐠</div>
       <div className="fish fish-2">🐟</div>
       <div className="fish fish-3">🐡</div>
@@ -25,43 +23,414 @@ function OceanDecorations() {
       <div className="fish fish-5">🐟</div>
       <div className="fish fish-6">🐠</div>
 
-      {/* Coral */}
       <div className="coral coral-1">🪸</div>
       <div className="coral coral-2">🪸</div>
       <div className="coral coral-3">🪸</div>
 
-      {/* Scuba diver */}
       <div className="scuba-diver">🤿</div>
     </>
   );
 }
 
+/* =========================================
+   CALENDAR
+   ========================================= */
+
+function Calendar({ onBack }) {
+  const today = new Date();
+
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+
+  const [selectedDate, setSelectedDate] = useState(
+    today.toISOString().split("T")[0]
+  );
+
+  const [tasks, setTasks] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("pearlprep-calendar-tasks") || "{}"
+      );
+    } catch {
+      return {};
+    }
+  });
+
+  const [taskText, setTaskText] = useState("");
+
+  const saveTasks = (updatedTasks) => {
+    setTasks(updatedTasks);
+    localStorage.setItem(
+      "pearlprep-calendar-tasks",
+      JSON.stringify(updatedTasks)
+    );
+  };
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const monthName = currentMonth.toLocaleString("default", {
+    month: "long",
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const previousMonth = () => {
+    setCurrentMonth(
+      new Date(year, month - 1, 1)
+    );
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(
+      new Date(year, month + 1, 1)
+    );
+  };
+
+  const goToToday = () => {
+    setCurrentMonth(
+      new Date(today.getFullYear(), today.getMonth(), 1)
+    );
+    setSelectedDate(
+      today.toISOString().split("T")[0]
+    );
+  };
+
+  const makeDateKey = (day) => {
+    return `${year}-${String(month + 1).padStart(
+      2,
+      "0"
+    )}-${String(day).padStart(2, "0")}`;
+  };
+
+  const addTask = () => {
+    if (!taskText.trim()) return;
+
+    const updatedTasks = {
+      ...tasks,
+      [selectedDate]: [
+        ...(tasks[selectedDate] || []),
+        {
+          id: Date.now(),
+          text: taskText.trim(),
+          completed: false,
+        },
+      ],
+    };
+
+    saveTasks(updatedTasks);
+    setTaskText("");
+  };
+
+  const toggleTask = (taskId) => {
+    const updatedTasks = {
+      ...tasks,
+      [selectedDate]: (tasks[selectedDate] || []).map(
+        (task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                completed: !task.completed,
+              }
+            : task
+      ),
+    };
+
+    saveTasks(updatedTasks);
+  };
+
+  const deleteTask = (taskId) => {
+    const updatedTasks = {
+      ...tasks,
+      [selectedDate]: (tasks[selectedDate] || []).filter(
+        (task) => task.id !== taskId
+      ),
+    };
+
+    saveTasks(updatedTasks);
+  };
+
+  const calendarDays = [];
+
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  const selectedTasks = tasks[selectedDate] || [];
+
+  return (
+    <div className="app">
+      <div className="ocean-background quiz-page">
+        <OceanDecorations />
+
+        <header className="calendar-header">
+          <button
+            className="back-button"
+            onClick={onBack}
+          >
+            ←
+          </button>
+
+          <div className="calendar-title">
+            <div className="quiz-title-pearl">
+              🦪
+            </div>
+
+            <div>
+              <h2>Study Calendar</h2>
+              <p>Plan. Practice. Shine.</p>
+            </div>
+          </div>
+
+          <button
+            className="today-button"
+            onClick={goToToday}
+          >
+            Today
+          </button>
+        </header>
+
+        <main className="calendar-container">
+          <div className="calendar-card">
+
+            <div className="calendar-top">
+              <button
+                className="calendar-nav"
+                onClick={previousMonth}
+              >
+                ←
+              </button>
+
+              <div>
+                <h1>
+                  {monthName} {year}
+                </h1>
+                <p>
+                  Organize your learning journey 🐚
+                </p>
+              </div>
+
+              <button
+                className="calendar-nav"
+                onClick={nextMonth}
+              >
+                →
+              </button>
+            </div>
+
+            <div className="calendar-weekdays">
+              {[
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ].map((day) => (
+                <div key={day}>{day}</div>
+              ))}
+            </div>
+
+            <div className="calendar-grid">
+              {calendarDays.map((day, index) => {
+                if (!day) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="calendar-day empty"
+                    />
+                  );
+                }
+
+                const dateKey = makeDateKey(day);
+
+                const isToday =
+                  dateKey ===
+                  today.toISOString().split("T")[0];
+
+                const isSelected =
+                  dateKey === selectedDate;
+
+                const hasTasks =
+                  (tasks[dateKey] || []).length > 0;
+
+                const completedTasks =
+                  (tasks[dateKey] || []).filter(
+                    (task) => task.completed
+                  ).length;
+
+                return (
+                  <button
+                    key={dateKey}
+                    className={`calendar-day ${
+                      isToday ? "today" : ""
+                    } ${
+                      isSelected ? "selected" : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedDate(dateKey)
+                    }
+                  >
+                    <span className="day-number">
+                      {day}
+                    </span>
+
+                    {hasTasks && (
+                      <span className="task-indicator">
+                        {completedTasks ===
+                        (tasks[dateKey] || []).length
+                          ? "✓"
+                          : "•"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="calendar-task-panel">
+              <div className="selected-date-title">
+                <span>📅</span>
+                <div>
+                  <strong>
+                    {new Date(
+                      `${selectedDate}T00:00:00`
+                    ).toLocaleDateString(
+                      "default",
+                      {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}
+                  </strong>
+                  <small>
+                    Your study tasks
+                  </small>
+                </div>
+              </div>
+
+              <div className="task-input-row">
+                <input
+                  type="text"
+                  value={taskText}
+                  onChange={(e) =>
+                    setTaskText(e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      addTask();
+                    }
+                  }}
+                  placeholder="Add a study task..."
+                />
+
+                <button
+                  className="add-task-button"
+                  onClick={addTask}
+                >
+                  + Add
+                </button>
+              </div>
+
+              <div className="task-list">
+                {selectedTasks.length === 0 ? (
+                  <div className="no-tasks">
+                    🐚 No tasks for this day yet.
+                    <br />
+                    Add something you want to study!
+                  </div>
+                ) : (
+                  selectedTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`study-task ${
+                        task.completed
+                          ? "completed"
+                          : ""
+                      }`}
+                    >
+                      <button
+                        className="task-check"
+                        onClick={() =>
+                          toggleTask(task.id)
+                        }
+                      >
+                        {task.completed
+                          ? "✓"
+                          : ""}
+                      </button>
+
+                      <span>{task.text}</span>
+
+                      <button
+                        className="task-delete"
+                        onClick={() =>
+                          deleteTask(task.id)
+                        }
+                        aria-label="Delete task"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================
+   MAIN APP
+   ========================================= */
+
 function App() {
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("Medium");
-  const [purpose, setPurpose] = useState("Technical Interview");
+  const [difficulty, setDifficulty] =
+    useState("Medium");
+  const [purpose, setPurpose] = useState(
+    "Technical Interview"
+  );
 
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState("ready");
+  const [modalType, setModalType] =
+    useState("ready");
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const [quizStarted, setQuizStarted] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [quizStarted, setQuizStarted] =
+    useState(false);
+  const [currentQuestion, setCurrentQuestion] =
+    useState(0);
+  const [selectedAnswer, setSelectedAnswer] =
+    useState(null);
   const [score, setScore] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [finished, setFinished] =
+    useState(false);
 
-  /* =========================================
-     REVIEW + SKIP
-     ========================================= */
-
-  const [userAnswers, setUserAnswers] = useState({});
-  const [showReview, setShowReview] = useState(false);
+  const [userAnswers, setUserAnswers] =
+    useState({});
+  const [showReview, setShowReview] =
+    useState(false);
 
   const [skippedQuestions, setSkippedQuestions] =
     useState({});
+
+  const [showCalendar, setShowCalendar] =
+    useState(false);
 
   /* =========================================
      GENERATE QUIZ
@@ -93,7 +462,9 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to generate quiz");
+        throw new Error(
+          "Failed to generate quiz"
+        );
       }
 
       const data = await response.json();
@@ -216,24 +587,32 @@ function App() {
 
     setSelectedAnswer(answer);
 
-    /* Save user's answer */
-    setUserAnswers((previousAnswers) => ({
-      ...previousAnswers,
-      [currentQuestion]: answer,
-    }));
+    setUserAnswers(
+      (previousAnswers) => ({
+        ...previousAnswers,
+        [currentQuestion]: answer,
+      })
+    );
 
-    /* If answered, remove from skipped list */
-    setSkippedQuestions((previousSkipped) => {
-      const updated = { ...previousSkipped };
-      delete updated[currentQuestion];
-      return updated;
-    });
+    setSkippedQuestions(
+      (previousSkipped) => {
+        const updated = {
+          ...previousSkipped,
+        };
 
-    const correct = getCorrectAnswer(question);
+        delete updated[currentQuestion];
+
+        return updated;
+      }
+    );
+
+    const correct =
+      getCorrectAnswer(question);
 
     if (
       correct !== null &&
-      normalize(answer) === normalize(correct)
+      normalize(answer) ===
+        normalize(correct)
     ) {
       setScore((prev) => prev + 1);
     }
@@ -244,24 +623,35 @@ function App() {
      ========================================= */
 
   const skipQuestion = () => {
-    /* Save skipped question */
-    setSkippedQuestions((previousSkipped) => ({
-      ...previousSkipped,
-      [currentQuestion]: true,
-    }));
+    setSkippedQuestions(
+      (previousSkipped) => ({
+        ...previousSkipped,
+        [currentQuestion]: true,
+      })
+    );
 
-    /* Make sure it isn't stored as answered */
-    setUserAnswers((previousAnswers) => {
-      const updated = { ...previousAnswers };
-      delete updated[currentQuestion];
-      return updated;
-    });
+    setUserAnswers(
+      (previousAnswers) => {
+        const updated = {
+          ...previousAnswers,
+        };
+
+        delete updated[currentQuestion];
+
+        return updated;
+      }
+    );
 
     setSelectedAnswer(null);
 
-    /* Move to next question */
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
+    if (
+      currentQuestion <
+      questions.length - 1
+    ) {
+      setCurrentQuestion(
+        (prev) => prev + 1
+      );
+
       setSelectedAnswer(null);
     } else {
       setFinished(true);
@@ -273,8 +663,14 @@ function App() {
      ========================================= */
 
   const nextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
+    if (
+      currentQuestion <
+      questions.length - 1
+    ) {
+      setCurrentQuestion(
+        (prev) => prev + 1
+      );
+
       setSelectedAnswer(null);
     } else {
       setFinished(true);
@@ -312,8 +708,11 @@ function App() {
   const getWrongQuestions = () => {
     return questions
       .map((q, index) => {
-        const userAnswer = userAnswers[index];
-        const correctAnswer = getCorrectAnswer(q);
+        const userAnswer =
+          userAnswers[index];
+
+        const correctAnswer =
+          getCorrectAnswer(q);
 
         const isCorrect =
           userAnswer !== undefined &&
@@ -336,6 +735,18 @@ function App() {
   };
 
   /* =========================================
+     CALENDAR PAGE
+     ========================================= */
+
+  if (showCalendar && !quizStarted) {
+    return (
+      <Calendar
+        onBack={() => setShowCalendar(false)}
+      />
+    );
+  }
+
+  /* =========================================
      HOME PAGE
      ========================================= */
 
@@ -351,20 +762,33 @@ function App() {
           <header className="top-header">
 
             <div className="brand">
-
               <div className="brand-icon">
                 🦪
               </div>
 
               <div>
                 <h1>PearlPrep</h1>
-                <p>Prepare. Practice. Shine.</p>
+                <p>
+                  Prepare. Practice. Shine.
+                </p>
               </div>
-
             </div>
 
-            <div className="header-pearl">
-              ✨
+            <div className="home-header-actions">
+
+              <button
+                className="calendar-open-button"
+                onClick={() =>
+                  setShowCalendar(true)
+                }
+              >
+                📅 Calendar
+              </button>
+
+              <div className="header-pearl">
+                ✨
+              </div>
+
             </div>
 
           </header>
@@ -388,8 +812,8 @@ function App() {
               </h2>
 
               <p className="hero-description">
-                Create personalized quizzes and practice
-                your skills with PearlPrep.
+                Create personalized quizzes and
+                practice your skills with PearlPrep.
               </p>
 
             </section>
@@ -417,7 +841,6 @@ function App() {
               {/* TOPIC */}
 
               <div className="form-group">
-
                 <label>Topic</label>
 
                 <input
@@ -428,13 +851,11 @@ function App() {
                   }
                   placeholder="e.g. Python, Java, SQL..."
                 />
-
               </div>
 
               {/* DIFFICULTY */}
 
               <div className="form-group">
-
                 <label>Difficulty</label>
 
                 <div className="select-wrapper">
@@ -452,13 +873,11 @@ function App() {
                   </select>
 
                 </div>
-
               </div>
 
               {/* PURPOSE */}
 
               <div className="form-group">
-
                 <label>Purpose</label>
 
                 <div className="select-wrapper">
@@ -469,7 +888,6 @@ function App() {
                       setPurpose(e.target.value)
                     }
                   >
-
                     <option>
                       Technical Interview
                     </option>
@@ -485,11 +903,9 @@ function App() {
                     <option>
                       Placement Preparation
                     </option>
-
                   </select>
 
                 </div>
-
               </div>
 
               {/* CREATE BUTTON */}
@@ -511,7 +927,6 @@ function App() {
             <section className="feature-row">
 
               <div className="feature">
-
                 <div className="feature-icon">
                   🎯
                 </div>
@@ -521,11 +936,9 @@ function App() {
                 <p>
                   Built for your goal
                 </p>
-
               </div>
 
               <div className="feature">
-
                 <div className="feature-icon">
                   🧠
                 </div>
@@ -535,11 +948,9 @@ function App() {
                 <p>
                   Test your knowledge
                 </p>
-
               </div>
 
               <div className="feature">
-
                 <div className="feature-icon">
                   ⭐
                 </div>
@@ -549,7 +960,6 @@ function App() {
                 <p>
                   Track your progress
                 </p>
-
               </div>
 
             </section>
@@ -570,119 +980,118 @@ function App() {
 
         {showModal &&
           modalType === "ready" && (
-
-          <div
-            className="modal-overlay"
-            onClick={closeModal}
-          >
-
             <div
-              className="ocean-modal"
-              onClick={(e) =>
-                e.stopPropagation()
-              }
+              className="modal-overlay"
+              onClick={closeModal}
             >
 
-              <div className="modal-pearl">
-                🦪
-              </div>
-
-              <h2>
-                Your quiz is ready!
-              </h2>
-
-              <p>
-                We created{" "}
-                <strong>
-                  {questions.length} questions
-                </strong>{" "}
-                for you.
-              </p>
-
-              <div className="quiz-info">
-
-                <div>
-                  <span>Topic</span>
-                  <strong>{topic}</strong>
-                </div>
-
-                <div>
-                  <span>Difficulty</span>
-                  <strong>{difficulty}</strong>
-                </div>
-
-                <div>
-                  <span>Purpose</span>
-                  <strong>{purpose}</strong>
-                </div>
-
-              </div>
-
-              <button
-                className="generate-button"
-                onClick={startQuiz}
+              <div
+                className="ocean-modal"
+                onClick={(e) =>
+                  e.stopPropagation()
+                }
               >
-                Start Quiz 🌊
-              </button>
 
-              <button
-                className="close-button"
-                onClick={closeModal}
-              >
-                Maybe Later
-              </button>
+                <div className="modal-pearl">
+                  🦪
+                </div>
 
+                <h2>
+                  Your quiz is ready!
+                </h2>
+
+                <p>
+                  We created{" "}
+                  <strong>
+                    {questions.length} questions
+                  </strong>{" "}
+                  for you.
+                </p>
+
+                <div className="quiz-info">
+
+                  <div>
+                    <span>Topic</span>
+                    <strong>{topic}</strong>
+                  </div>
+
+                  <div>
+                    <span>Difficulty</span>
+                    <strong>
+                      {difficulty}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Purpose</span>
+                    <strong>
+                      {purpose}
+                    </strong>
+                  </div>
+
+                </div>
+
+                <button
+                  className="generate-button"
+                  onClick={startQuiz}
+                >
+                  Start Quiz 🌊
+                </button>
+
+                <button
+                  className="close-button"
+                  onClick={closeModal}
+                >
+                  Maybe Later
+                </button>
+
+              </div>
             </div>
-
-          </div>
-
-        )}
+          )}
 
         {/* ERROR MODAL */}
 
         {showModal &&
           modalType === "error" && (
-
-          <div
-            className="modal-overlay"
-            onClick={closeModal}
-          >
-
             <div
-              className="ocean-modal error-modal"
-              onClick={(e) =>
-                e.stopPropagation()
-              }
+              className="modal-overlay"
+              onClick={closeModal}
             >
 
-              <div className="modal-pearl">
-                🌊
+              <div
+                className="ocean-modal error-modal"
+                onClick={(e) =>
+                  e.stopPropagation()
+                }
+              >
+
+                <div className="modal-pearl">
+                  🌊
+                </div>
+
+                <h2>
+                  {topic.trim()
+                    ? "Oops!"
+                    : "Choose a topic"}
+                </h2>
+
+                <p>
+                  {topic.trim()
+                    ? "We couldn't create the quiz right now. Please make sure the backend is running."
+                    : "Enter a topic before creating your quiz."}
+                </p>
+
+                <button
+                  className="generate-button"
+                  onClick={closeModal}
+                >
+                  Okay
+                </button>
+
               </div>
 
-              <h2>
-                {topic.trim()
-                  ? "Oops!"
-                  : "Choose a topic"}
-              </h2>
-
-              <p>
-                {topic.trim()
-                  ? "We couldn't create the quiz right now. Please make sure the backend is running."
-                  : "Enter a topic before creating your quiz."}
-              </p>
-
-              <button
-                className="generate-button"
-                onClick={closeModal}
-              >
-                Okay
-              </button>
-
             </div>
-
-          </div>
-
-        )}
+          )}
 
       </div>
     );
@@ -754,50 +1163,50 @@ function App() {
                 {wrongQuestions.map(
                   (item, index) => (
 
-                  <div
-                    className="review-card"
-                    key={item.index}
-                  >
+                    <div
+                      className="review-card"
+                      key={item.index}
+                    >
 
-                    <div className="review-question-number">
-                      Question {index + 1}
+                      <div className="review-question-number">
+                        Question {index + 1}
+                      </div>
+
+                      <h2>
+                        {getQuestionText(
+                          item.question
+                        )}
+                      </h2>
+
+                      <div className="review-answer wrong-review">
+
+                        <span className="review-answer-label">
+                          ❌ Your Answer
+                        </span>
+
+                        <strong>
+                          {item.userAnswer}
+                        </strong>
+
+                      </div>
+
+                      <div className="review-answer correct-review">
+
+                        <span className="review-answer-label">
+                          ✅ Correct Answer
+                        </span>
+
+                        <strong>
+                          {item.correctAnswer}
+                        </strong>
+
+                      </div>
+
                     </div>
+                  )
+                )}
 
-                    <h2>
-                      {getQuestionText(
-                        item.question
-                      )}
-                    </h2>
-
-                    <div className="review-answer wrong-review">
-
-                      <span className="review-answer-label">
-                        ❌ Your Answer
-                      </span>
-
-                      <strong>
-                        {item.userAnswer}
-                      </strong>
-
-                    </div>
-
-                    <div className="review-answer correct-review">
-
-                      <span className="review-answer-label">
-                        ✅ Correct Answer
-                      </span>
-
-                      <strong>
-                        {item.correctAnswer}
-                      </strong>
-
-                    </div>
-
-                  </div>
-
-                ))}
               </div>
-
             )}
 
             <button
@@ -835,7 +1244,9 @@ function App() {
       getWrongQuestions().length;
 
     const skippedCount =
-      Object.keys(skippedQuestions).length;
+      Object.keys(
+        skippedQuestions
+      ).length;
 
     let message =
       "Keep practicing! 🌱";
@@ -923,10 +1334,7 @@ function App() {
 
             </div>
 
-            {/* REVIEW WRONG ANSWERS */}
-
             {wrongCount > 0 && (
-
               <button
                 className="review-button"
                 onClick={() =>
@@ -935,10 +1343,7 @@ function App() {
               >
                 📖 Review Wrong Answers
               </button>
-
             )}
-
-            {/* CREATE ANOTHER QUIZ */}
 
             <button
               className="generate-button"
@@ -1020,14 +1425,12 @@ function App() {
               </span>
 
               <span>
-
                 {Math.round(
                   ((currentQuestion + 1) /
                     questions.length) *
                     100
                 )}
                 %
-
               </span>
 
             </div>
@@ -1054,11 +1457,9 @@ function App() {
           <div className="question-card">
 
             <div className="question-type">
-
               {question?.type ||
                 question?.question_type ||
                 "Question"}
-
             </div>
 
             <h1>
@@ -1113,9 +1514,7 @@ function App() {
                       key={index}
                       className={answerClass}
                       onClick={() =>
-                        handleAnswer(
-                          option
-                        )
+                        handleAnswer(option)
                       }
                       disabled={
                         selectedAnswer !==
@@ -1142,7 +1541,6 @@ function App() {
 
                     </button>
                   );
-
                 }
               )}
 
@@ -1217,7 +1615,8 @@ function App() {
                 className="skip-button"
                 onClick={skipQuestion}
                 disabled={
-                  selectedAnswer !== null
+                  selectedAnswer !==
+                  null
                 }
               >
                 Skip Question ⏭️
