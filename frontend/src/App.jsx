@@ -447,7 +447,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/generate-quiz",
+        `${import.meta.env.VITE_API_URL}/generate-quiz`,
         {
           method: "POST",
           headers: {
@@ -1648,3 +1648,4 @@ function App() {
 }
 
 export default App;
+
