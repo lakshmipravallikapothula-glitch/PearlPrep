@@ -328,13 +328,12 @@ def generate_quiz(request: QuizRequest):
 
     except Exception as exc:
 
-        print(f"Quiz generation error: {exc}")
+    print(f"Quiz generation error: {exc}")
 
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to generate quiz. Please try again.",
-        )
-
+    raise HTTPException(
+        status_code=500,
+        detail=f"Quiz generation error: {exc}",
+    )
 
 # --------------------------------------------------
 # Health Check
